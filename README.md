@@ -2,7 +2,7 @@
 
 Исследование на микроданных **PISA 2022** (OECD, 613 744 пятнадцатилетних из 80 стран) с проверкой выводов по независимой литературе.
 
-**Дашборд: https://thekostins.github.io/pisa-career-choice/**
+**Дашборд: https://thekostins.github.io/korus/**
 
 ---
 
