@@ -1,0 +1,11 @@
+# сырые данные PISA (2.6 ГБ) и промежуточный parquet (169 МБ) — не в git
+data/raw/
+data/interim/*.parquet
+
+# окружение
+.venv/
+__pycache__/
+*.pyc
+
+# системное
+.DS_Store

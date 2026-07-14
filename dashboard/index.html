@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Что определяет выбор профессии — PISA 2022</title>
+<script src="chart.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f2ec; --card:#fffdf8; --ink:#232019; --muted:#6b6559; --line:#e0dccf;
+    --accent:#b0472f; --accent2:#2f6f7a; --girl:#b5476f; --boy:#2f6f9e;
+    --good:#3f7d4e; --warn:#c08a2d; --bad:#b0472f;
+    --shadow:0 1px 3px rgba(40,35,25,.08),0 8px 24px rgba(40,35,25,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+  header{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  .kicker{color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+  h1{font-size:clamp(30px,5vw,46px);line-height:1.12;margin:.35em 0 .3em;letter-spacing:-.01em}
+  .lead{font-size:19px;color:var(--muted);max-width:70ch;margin:0}
+  h2{font-size:27px;letter-spacing:-.01em;margin:0 0 6px}
+  h3{font-size:19px;margin:0 0 4px}
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  .sec-label{color:var(--accent2);font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px}
+  p{margin:.7em 0}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow)}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+  .hyp{border-left:4px solid var(--accent);padding-left:18px;margin:22px 0}
+  .hyp .tag{font-weight:700;color:var(--accent)}
+  .chartbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .chartbox h3{margin-bottom:2px}
+  .cap{font-size:13.5px;color:var(--muted);margin:2px 0 14px}
+  canvas{max-width:100%}
+  .cwrap{position:relative;height:290px;width:100%}
+  .cwrap.wide{height:240px}
+  .switch{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 26px}
+  .switch button{font:inherit;font-size:14px;font-weight:600;padding:8px 16px;border-radius:999px;
+    border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;transition:.15s}
+  .switch button:hover{border-color:var(--accent2);color:var(--ink)}
+  .switch button.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .stat{display:flex;flex-direction:column;gap:2px}
+  .stat .num{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .stat .lbl{font-size:13.5px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:right;padding:9px 12px;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+  tbody tr:hover{background:#faf7ef}
+  .bars .row{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:10px;margin:5px 0;font-size:14px}
+  .bars .bar{height:20px;border-radius:5px}
+  .occ .row{grid-template-columns:130px 1fr 40px}
+  .occ .lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;vertical-align:middle}
+  .p-good{background:#e3efe4;color:var(--good)} .p-warn{background:#f6ecd6;color:var(--warn)} .p-bad{background:#f4e0da;color:var(--bad)}
+  .p-info{background:#dfeaec;color:var(--accent2)}
+  .metacard{border-left:4px solid var(--line)}
+  .metacard.confirms{border-left-color:var(--good)} .metacard.contests{border-left-color:var(--warn)}
+  .metacard.corrects{border-left-color:var(--bad)} .metacard.context{border-left-color:var(--accent2)}
+  .metacard .src{font-size:13px;color:var(--muted);margin-top:8px}
+  .metacard a{color:var(--accent2)}
+  .num-big{color:var(--accent);font-weight:700}
+  ul.tick{list-style:none;padding:0;margin:.6em 0}
+  ul.tick li{padding-left:26px;position:relative;margin:.5em 0}
+  ul.tick li:before{content:"";position:absolute;left:4px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--accent2)}
+  .conc{display:grid;grid-template-columns:auto 1fr;gap:14px 18px;align-items:start}
+  .legend{display:flex;gap:18px;font-size:13.5px;color:var(--muted);margin-bottom:8px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  footer{padding:44px 0 80px;color:var(--muted);font-size:14px}
+  code{background:#ece7db;padding:1px 6px;border-radius:5px;font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="kicker">Исследование · PISA 2022 · OECD</div>
+  <h1>Что на самом деле определяет,<br>кем подросток хочет стать</h1>
+  <p class="lead">Полмиллиона пятнадцатилетних из 80 стран назвали профессию, которую ждут к 30 годам.
+  Мы посмотрели, чей это выбор на самом деле — свой собственный или унаследованный, — и сверили каждую
+  находку с независимыми исследованиями.</p>
+</div></header>
+
+<section><div class="wrap">
+  <div class="sec-label">Вопрос и гипотезы</div>
+  <h2>Две гипотезы, которые можно опровергнуть</h2>
+  <p>Выбор профессии легко объяснить задним числом «интересом» или «способностями». Нас интересовало другое —
+  то, что человек не выбирал: с какой семьёй родился и какого он пола. Обе гипотезы сформулированы так, чтобы
+  данные могли сказать «нет».</p>
+
+  <div class="hyp">
+    <p><span class="tag">H1 — статус передаётся по наследству.</span> Ожидаемый престиж профессии ребёнка
+    зависит от статуса профессии его родителей — и эта связь <em>не сводится</em> к тому, что дети из хороших
+    семей просто лучше учатся. Если убрать вклад успеваемости, влияние родителей должно всё равно остаться.</p>
+  </div>
+  <div class="hyp">
+    <p><span class="tag">H4 — гендерный разрыв это про область, а не про высоту.</span> Девочки метят не ниже
+    мальчиков — но в другие профессии. При равных баллах по математике они реже выбирают инженерию и IT,
+    зато чаще медицину. То есть разрыв в STEM — это сортировка по <em>полю</em>, а не заниженные амбиции.</p>
+  </div>
+  <p class="muted">Почему именно PISA: здесь профессию не угадывают за подростка, а прямо спрашивают —
+  «кем ты ждёшь работать в 30 лет?». Свободный ответ кодируют по международному классификатору ISCO-08 и
+  переводят в индекс престижа ISEI (примерно от 11 до 89). Так «мечта» становится измеримой величиной.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Как считали</div>
+  <h2>Метод: свои цифры плюс чужие</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Данные под дизайн, а не «как есть»</h3>
+      <p class="muted" style="margin-top:8px">PISA — не обычная таблица. Наивная регрессия завысила бы значимость,
+      поэтому мы считали как положено: с весами <code>W_FSTUWT</code>, объединяя 10 «правдоподобных значений»
+      балла по правилам Рубина и оценивая ошибки методом BRR на 80 репликах. Стандартные ошибки здесь честные,
+      а не заниженные.</p></div>
+    <div class="card"><h3>Триангуляция</h3>
+      <p class="muted" style="margin-top:8px">Каждый вывод на своих данных мы проверяли на воспроизводимость в
+      независимых выборках — других странах и других исследованиях. Совпадение и расхождение с литературой
+      само по себе результат. Литературу собирали в режиме многоагентного поиска и сверяли числа с
+      первоисточником, а не с чужим пересказом.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Что показывают данные</div>
+  <h2>Живые цифры <span class="muted" style="font-size:18px;font-weight:400">— выберите страну</span></h2>
+  <div class="switch" id="switch"></div>
+
+  <div class="grid g3" id="stats" style="margin-bottom:22px"></div>
+
+  <div class="grid g2">
+    <div class="chartbox">
+      <h3>H1 · Статус родителей → ожидания ребёнка</h3>
+      <div class="cap">По горизонтали — статус профессии родителей (ISEI), по вертикали — средний ожидаемый
+      престиж у детей. Наклон вверх = наследование.</div>
+      <div class="cwrap"><canvas id="c_h1"></canvas></div>
+    </div>
+    <div class="chartbox">
+      <h3>H4 · Доля STEM по квартилям математики</h3>
+      <div class="cap">Даже среди сильнейших по математике (4-й квартиль) девочки выбирают инженерию и IT
+      заметно реже. Разрыв не закрывается.</div>
+      <div class="legend"><span><i class="dot" style="background:var(--girl)"></i>девочки</span>
+        <span><i class="dot" style="background:var(--boy)"></i>мальчики</span></div>
+      <div class="cwrap"><canvas id="c_h4"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chartbox" style="margin-top:18px">
+    <h3>Топ-10 ожидаемых профессий</h3>
+    <div class="cap">Ожидания сжаты в узкий набор и сильно разведены по полу. У мальчиков в списке есть
+    разработчики ПО и автомеханики, которых нет у девочек; спортсмены нередко на первом месте.</div>
+    <div class="grid g2">
+      <div><div class="legend"><span><i class="dot" style="background:var(--girl)"></i>Девочки</span></div>
+        <div class="bars occ" id="occ_f"></div></div>
+      <div><div class="legend"><span><i class="dot" style="background:var(--boy)"></i>Мальчики</span></div>
+        <div class="bars occ" id="occ_m"></div></div>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Результат · H1</div>
+  <h2>Родительский статус работает — почти везде</h2>
+  <p>Эффект статуса родителей мы разложили на две части: сколько идёт <em>через</em> оценки ребёнка и сколько
+  остаётся <em>напрямую</em>, помимо успеваемости. Коэффициент — на сколько пунктов престижа сдвигается ожидание
+  при росте статуса родителей на одно стандартное отклонение.</p>
+  <div class="card" style="overflow-x:auto"><table id="t_h1">
+    <thead><tr><th>Страна</th><th>Полный эффект</th><th>Прямой (без вклада оценок)</th><th>Через успеваемость</th><th>Вывод</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="muted">Прямой эффект переживает контроль на успеваемость почти всюду — родители влияют не только
+  через хорошие оценки. Единственное исключение — <b>Колумбия</b>, и там дело особое: почти все подростки метят
+  в топ-профессии, разброса ожиданий почти нет, и корреляции просто нечего измерять (см. раздел о «потолке» ниже).</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Результат · H4</div>
+  <h2>Девочки метят выше, но в другую сторону</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Высота — не ниже</h3>
+      <div class="bars" id="lvl_bars" style="margin-top:12px"></div>
+      <p class="cap" style="margin-top:12px">На сколько пунктов ISEI ожидания девочек <em>выше</em>, чем у мальчиков.
+      Везде положительно: по амбициям девочки не уступают.</p></div>
+    <div class="card"><h3>Поле — в сторону от STEM</h3>
+      <div class="bars" id="field_bars" style="margin-top:12px"></div>
+      <p class="cap" style="margin-top:12px">Отношение шансов выбрать STEM у девочек к мальчикам при равном балле
+      (меньше 1 = реже). Разрыв устойчив во всех странах.</p></div>
+  </div>
+  <p style="margin-top:20px">Складывается ясная картина: разрыв в STEM — это <b>не</b> «девочки боятся науки» и
+  <b>не</b> заниженные амбиции. Уровень притязаний у них даже выше. Просто при равных способностях они чаще идут в
+  медицину и право, а мальчики — в инженерию и IT. И вопреки популярному тезису, у самых сильных учениц разрыв не
+  сужается — если что, слегка растёт.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Другие факторы</div>
+  <h2>А что ещё влияет на ожидания</h2>
+  <p>Помимо семьи и пола мы прогнали ещё полтора десятка факторов. Вот их независимый вклад в ожидаемый престиж
+  (при взаимном контроле). Все пятнадцать вместе объясняют лишь <span class="num-big" id="r2"></span> разброса —
+  ожидания во многом штука личная и плохо предсказуемая.</p>
+  <div class="card"><div class="bars" id="fac_bars"></div></div>
+  <p class="muted">Важная оговорка, которую легко упустить: часть «факторов» — не причины, а следствия.
+  Мат. самоэффективность на 44% сцеплена с реальной успеваемостью и на две трети стоит <em>ниже</em> её по течению.
+  Поэтому её нельзя ставить в один ряд с достижениями как равноправную причину — это скорее переупакованная
+  успеваемость. Собственно статус родителей и пол этой проверки не боятся: они выше по течению.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Между странами</div>
+  <h2>Наследование статуса — не универсальный закон</h2>
+  <p>Сила связи «статус родителей → ожидания» гуляет от почти нуля до заметной. В Центральной Европе (Венгрия,
+  Словакия) она сильнее всего, в Латинской Америке и кое-где в Азии — почти исчезает. Ниже — корреляция по всем
+  странам с достаточным покрытием.</p>
+  <div class="chartbox"><div class="cwrap wide"><canvas id="c_het"></canvas></div></div>
+  <div class="card metacard contests" style="margin-top:18px">
+    <h3>Осторожно с «Колумбия = нет влияния»</h3>
+    <p class="muted" style="margin-top:8px">Литература по Латинской Америке утверждает обратное — там статус семьи
+    для притязаний важен. Расхождение примиряется эффектом «потолка»: в Колумбии среднее ожидание самое высокое
+    (72.8), разброс самый узкий, и <b>40%</b> подростков метят в профессии из верхушки престижа (ISEI ≥ 80). Когда
+    почти все хотят наверх, корреляции нечего улавливать. Так что колумбийский «ноль» — скорее статистический
+    артефакт сжатой дисперсии, чем доказательство, что семья не при чём.</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Что говорит литература</div>
+  <h2>Проверка на чужих данных</h2>
+  <p class="muted">Пятнадцать источников, собранных многоагентным поиском. Цвет слева: <span class="pill p-good">подтверждает</span>
+  <span class="pill p-warn">спорит</span> <span class="pill p-bad">поправляет</span> <span class="pill p-info">контекст</span>.
+  Метка <code>primary</code> — цифра сверена с первоисточником, <code>unverified</code> — подтвердить не удалось.</p>
+  <div class="grid g2" id="meta"></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Сопоставление</div>
+  <h2>Где мы сошлись с литературой, а где нет</h2>
+  <div class="grid" style="gap:14px">
+    <div class="card metacard confirms"><h3>H1 совпал по сути</h3>
+      <p class="muted" style="margin-top:6px">Прямой эффект родителей сверх успеваемости независимо подтверждён —
+      особенно венским панельным исследованием (Valls и соавт., 2022), где родительское образование значимо и
+      после контроля на оценки. Точной опубликованной «копии» нашего коэффициента нет, поэтому сходится паттерн,
+      а не величина.</p></div>
+    <div class="card metacard confirms"><h3>H4 совпал и по полю, и по спорному пункту</h3>
+      <p class="muted" style="margin-top:6px">Сортировка по полю воспроизводится в работах на 80 странах
+      (Stoet &amp; Geary, 2022) и у OECD. А спорный тезис «у сильных учениц разрыв сужается» оказался слабой,
+      устаревшей стороной: свежие крупные работы (Breda, 2023) согласны с нами — разрыв с ростом балла скорее растёт.</p></div>
+    <div class="card metacard corrects"><h3>Поправили чужую цифру</h3>
+      <p class="muted" style="margin-top:6px">Ходовое утверждение, будто в испанском исследовании на деревьях
+      родительский статус давал «около 9% важности», подтвердить не удалось: в самой статье наверху совсем другие
+      предикторы — второгодничество, мотивация, чтение. Число похоже на искажение при пересказе; как установленное
+      мы его не используем.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Выводы</div>
+  <h2>Что можно утверждать — и насколько уверенно</h2>
+  <div class="conc" id="concl"></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Честно о слабых местах</div>
+  <h2>Ограничения</h2>
+  <ul class="tick">
+    <li><b>Корреляция — не причинность.</b> Возможна и обратная связь: амбициозные дети лучше учатся, а не наоборот.</li>
+    <li><b>Ожидание — не судьба.</b> BSMJ это мечта пятнадцатилетнего, а не профессия, которой он в итоге займётся.</li>
+    <li><b>Самоотчёт.</b> О профессии родителей подросток рассказывает неточно.</li>
+    <li><b>Один срез времени.</b> Причинный порядок «успеваемость → самоэффективность» мы <em>предположили</em>;
+      связь может быть встречной. PISA направление не доказывает.</li>
+    <li><b>Эффект «потолка».</b> Там, где почти все метят наверх (Колумбия), корреляции механически занижены —
+      это не отсутствие влияния семьи.</li>
+    <li><b>Культура.</b> Результат по одной стране не переносится на другие — это, собственно, один из наших выводов.</li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-label">Прозрачность</div>
+  <h2>Где помог ИИ, а где пришлось перепроверять руками</h2>
+  <div class="grid g2">
+    <div class="card metacard confirms"><h3>ИИ ускорил</h3>
+      <ul class="tick" style="margin-top:4px">
+        <li>Нашёл рабочие имена переменных и вскрыл ловушку с «пропусками» в кодах профессий.</li>
+        <li>Написал корректную реализацию BRR и пулинга plausible values.</li>
+        <li>Собрал литературу многоагентным поиском по четырём направлениям сразу.</li>
+      </ul></div>
+    <div class="card metacard corrects"><h3>Пришлось проверять руками</h3>
+      <ul class="tick" style="margin-top:4px">
+        <li>Все цифры OECD сверены с первоисточниками; «9% важности» из статьи оказалось неподтверждаемым.</li>
+        <li>ИИ поначалу свалил причины и следствия в одну регрессию — поймали и перестроили под причинный порядок.</li>
+        <li>Аномалию Колумбии не приняли на веру, а объяснили эффектом «потолка» на своих данных.</li>
+      </ul></div>
+  </div>
+  <p class="muted">Правило проекта было простое: ни одна цифра не попадает сюда, пока она не воспроизведена кодом
+  или не сверена с оригиналом.</p>
+</div></section>
+
+<footer><div class="wrap">
+  Источник данных: OECD PISA 2022, Student Questionnaire (<code>CY08MSP_STU_QQQ</code>), 613 744 респондента.
+  Оценки H1/H4 — со взвешиванием, BRR и объединением plausible values. Все графики построены на посчитанных
+  величинах из <code>data.js</code>.
+</div></footer>
+
+<script src="data.js"></script>
+<script>
+const D = window.DASH, F="var(--girl)", B="var(--boy)";
+const css = v => getComputedStyle(document.body).getPropertyValue(v).trim();
+let cur = "POOL";
+let chH1, chH4;
+
+// ---------- переключатель стран ----------
+const order = [...D.panel, "POOL"];
+const sw = document.getElementById("switch");
+order.forEach(c=>{
+  const b=document.createElement("button");
+  b.textContent = D.names[c]; b.dataset.c=c;
+  if(c===cur) b.className="on";
+  b.onclick=()=>{cur=c; [...sw.children].forEach(x=>x.className=x.dataset.c===c?"on":""); render();};
+  sw.appendChild(b);
+});
+
+function render(){
+  const c = D.countries[cur], s = c.summary, g = c.by_gender;
+  // статистика
+  document.getElementById("stats").innerHTML = `
+    <div class="card stat"><span class="num">${s.n_bsmj.toLocaleString('ru')}</span><span class="lbl">ответов с профессией</span></div>
+    <div class="card stat"><span class="num">${s.mean_bsmj}</span><span class="lbl">средний престиж ожидания (ISEI)</span></div>
+    <div class="card stat"><span class="num">${s.ceiling}%</span><span class="lbl">метят в топ (ISEI ≥ 80)</span></div>
+    <div class="card stat"><span class="num" style="color:${css('--girl')}">${g.female.stem}% / ${g.male.stem}%</span><span class="lbl">STEM: девочки / мальчики</span></div>
+    <div class="card stat"><span class="num" style="color:${css('--accent2')}">${g.female.health}% / ${g.male.health}%</span><span class="lbl">медицина: девочки / мальчики</span></div>
+    <div class="card stat"><span class="num">${g.female.prof}% / ${g.male.prof}%</span><span class="lbl">ждут профессию: дев. / мал.</span></div>`;
+
+  // H1 scatter/line
+  const pts = c.hisei_bsmj.map(p=>({x:p.x,y:p.y}));
+  const cfgH1 = {type:"line", data:{datasets:[{data:pts, borderColor:css('--accent'),
+      backgroundColor:css('--accent'), pointRadius:4, tension:.25, borderWidth:2.5, fill:false}]},
+    options:{plugins:{legend:{display:false}}, scales:{
+      x:{type:"linear", title:{display:true,text:"статус родителей (ISEI)"}, grid:{color:css('--line')}},
+      y:{title:{display:true,text:"ожидаемый престиж ребёнка"}, grid:{color:css('--line')}}},
+      maintainAspectRatio:false}};
+  if(chH1){chH1.data=cfgH1.data; chH1.update();} else chH1=new Chart(document.getElementById("c_h1"),cfgH1);
+
+  // H4 grouped bars
+  const q=["1-й","2-й","3-й","4-й"];
+  const cfgH4={type:"bar", data:{labels:q, datasets:[
+      {label:"девочки", data:c.stem_by_mathq.female, backgroundColor:css('--girl')},
+      {label:"мальчики", data:c.stem_by_mathq.male, backgroundColor:css('--boy')}]},
+    options:{plugins:{legend:{display:false}}, scales:{
+      x:{title:{display:true,text:"квартиль балла по математике"}, grid:{display:false}},
+      y:{title:{display:true,text:"доля STEM, %"}, grid:{color:css('--line')}}},
+      maintainAspectRatio:false}};
+  if(chH4){chH4.data=cfgH4.data; chH4.update();} else chH4=new Chart(document.getElementById("c_h4"),cfgH4);
+
+  // топ-профессии
+  occBars("occ_f", c.top_occ.female, css('--girl'));
+  occBars("occ_m", c.top_occ.male, css('--boy'));
+}
+
+function occBars(id, arr, color){
+  const max=Math.max(...arr.map(a=>a.pct));
+  document.getElementById(id).innerHTML = arr.map(a=>`
+    <div class="row"><span class="lab" title="${a.label}">${a.label}</span>
+      <span><span class="bar" style="display:block;width:${a.pct/max*100}%;background:${color};opacity:.85"></span></span>
+      <span style="text-align:right">${a.pct}%</span></div>`).join("");
+}
+
+// ---------- H1 таблица ----------
+(function(){
+  const m=D.models, tb=document.querySelector("#t_h1 tbody");
+  order.forEach(c=>{
+    const r=m[c]; if(!r) return;
+    const ok = Math.abs(r.H1_direct/r.H1_direct_se) > 2;
+    const verdict = c==="COL" ? '<span class="pill p-warn">на грани нуля</span>'
+                  : ok ? '<span class="pill p-good">подтверждается</span>' : '<span class="pill p-warn">слабо</span>';
+    tb.innerHTML += `<tr><td>${D.names[c]}</td>
+      <td>${r.H1_total.toFixed(2)}</td>
+      <td><b>${r.H1_direct.toFixed(2)}</b> <span class="muted">± ${r.H1_direct_se.toFixed(2)}</span></td>
+      <td>${r.H1_pct_mediated.toFixed(0)}%</td><td>${verdict}</td></tr>`;
+  });
+})();
+
+// ---------- H4 level / field bars ----------
+(function(){
+  const m=D.models;
+  const lvl=order.map(c=>({name:D.names[c], v:m[c].H4_BSMJ_female}));
+  const fld=order.map(c=>({name:D.names[c], v:Math.exp(m[c].H4_stem_female_logOR)}));
+  const maxL=Math.max(...lvl.map(x=>x.v));
+  document.getElementById("lvl_bars").innerHTML = lvl.map(x=>`
+    <div class="row"><span>${x.name}</span>
+      <span><span class="bar" style="display:block;width:${x.v/maxL*100}%;background:${css('--girl')}"></span></span>
+      <span style="text-align:right">+${x.v.toFixed(1)}</span></div>`).join("");
+  document.getElementById("field_bars").innerHTML = fld.map(x=>`
+    <div class="row"><span>${x.name}</span>
+      <span><span class="bar" style="display:block;width:${x.v*100}%;max-width:100%;background:${css('--boy')}"></span></span>
+      <span style="text-align:right">${x.v.toFixed(2)}×</span></div>`).join("");
+})();
+
+// ---------- факторы ----------
+(function(){
+  document.getElementById("r2").textContent = Math.round(D.factors_r2*100) + "%";
+  const max=Math.max(...D.factors.map(f=>Math.abs(f.beta)));
+  document.getElementById("fac_bars").innerHTML = D.factors.map(f=>{
+    const pos=f.beta>=0, w=Math.abs(f.beta)/max*100;
+    return `<div class="row"><span>${f.label}</span>
+      <span><span class="bar" style="display:block;width:${w}%;background:${pos?css('--accent2'):css('--bad')}"></span></span>
+      <span style="text-align:right">${pos?'+':''}${f.beta.toFixed(2)}</span></div>`;
+  }).join("");
+})();
+
+// ---------- гетерогенность ----------
+(function(){
+  const h=D.heterogeneity, lab=h.map(x=>x.cnt), val=h.map(x=>x.r);
+  new Chart(document.getElementById("c_het"),{type:"bar",
+    data:{labels:lab, datasets:[{data:val, backgroundColor:val.map(v=>
+      v<0.08?css('--bad'):v<0.2?css('--warn'):css('--good'))}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>"r = "+c.raw}}},
+      scales:{x:{ticks:{font:{size:9},maxRotation:90,minRotation:90}, grid:{display:false}},
+        y:{title:{display:true,text:"корреляция статус родителей ↔ ожидания"}, grid:{color:css('--line')}}},
+      maintainAspectRatio:false}});
+})();
+
+// ---------- литература ----------
+(function(){
+  const vmap={primary:'p-good',abstract:'p-info',secondary:'p-info',unverified:'p-bad'};
+  const rmap={confirms:'подтверждает',contests:'спорит',corrects:'поправляет',context:'контекст'};
+  document.getElementById("meta").innerHTML = D.meta.findings.map(f=>`
+    <div class="card metacard ${f.relation}">
+      <div><span class="pill ${f.verify==='primary'?'p-good':f.verify==='unverified'?'p-bad':'p-info'}">${f.verify}</span>
+        <span class="muted" style="font-size:12.5px;margin-left:6px">${rmap[f.relation]||''} · ${f.hyp}</span></div>
+      <p style="margin:.5em 0 .2em">${f.claim}</p>
+      <div class="src">${f.number?('<b>'+f.number+'</b> · '):''}${f.source}${f.year?', '+f.year:''}${f.country?' · '+f.country:''}
+        ${f.url?`· <a href="${f.url}" target="_blank" rel="noopener">источник</a>`:''}</div>
+    </div>`).join("");
+})();
+
+// ---------- выводы ----------
+(function(){
+  const items=[
+    ["high","H1 · Статус родителей влияет напрямую","Даже без вклада успеваемости эффект родителей держится (в пуле ~63% эффекта — прямые). Подтверждено независимо."],
+    ["medium","H1 · Но это не универсальный закон","Сила связи гуляет от нуля до заметной; в Латинской Америке низкая — отчасти из-за «потолка» ожиданий."],
+    ["high","H4 · Разрыв в STEM — это поле, а не высота","Девочки метят не ниже, а чаще в медицину; при равном балле STEM выбирают реже во всех странах."],
+    ["medium","H4 · У сильных учениц разрыв не сужается","Наш результат на стороне свежих крупных работ; популярный тезис о «сужении» слабо подкреплён."],
+  ];
+  const bmap={high:'p-good',medium:'p-warn',low:'p-bad'}, tmap={high:'высокая',medium:'средняя',low:'низкая'};
+  document.getElementById("concl").innerHTML = items.map(([lvl,t,d])=>`
+    <div><span class="pill ${bmap[lvl]}">${tmap[lvl]} уверенность</span></div>
+    <div><h3 style="margin-bottom:2px">${t}</h3><p class="muted" style="margin:.2em 0">${d}</p></div>`).join("");
+})();
+
+render();
+</script>
+</body>
+</html>
